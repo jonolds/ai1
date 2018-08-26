@@ -3,12 +3,16 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.TreeSet;
+import java.util.Vector;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -20,6 +24,18 @@ class GameState {
 	GameState(GameState _prev) {
 		prev = _prev;
 		state = new byte[22];
+	}
+}
+
+class Piece {
+	byte[] color;
+	int id;
+	Vector<Point> pts;
+	
+	Piece(int id, byte[] color, Vector<Point> pts) {
+		this.id = id;
+		this.color = color;
+		this.pts = pts;
 	}
 }
 
@@ -38,14 +54,35 @@ class StateComparator implements Comparator<GameState> {
 public class Game extends JFrame {
 	StateComparator comp = new StateComparator();
 	TreeSet<GameState> state = new TreeSet<GameState>(comp);
+	Vector<Piece> pieces = new Vector<Piece>();
+	Vector<Point> blackPts = new Vector<Point>();
 	View view;
 	boolean[][] boardOrig = new boolean[10][10];
 	ArrayList<Point> blacks = new ArrayList<Point>();
 	ArrayList<int[]> intsInit = new ArrayList<int[]>();
 	ArrayList<Point[]> ptsInit = new ArrayList<Point[]>();
 
-	public void init() {
+	public void init() throws FileNotFoundException {
 		//BLACK
+		Scanner sc = new Scanner(new File("initialValues.txt"));
+		ArrayList<int[]> intAL = new ArrayList<int[]>();
+	
+		while(sc.hasNextLine()) {
+			String[] s = sc.nextLine().trim().split(" ");
+			int[] intArray = new int[s.length];
+			for(int i = 0; i < s.length; i++)
+				intArray[i] = Integer.parseInt(s[i]);
+			intAL.add(intArray);
+		}
+		sc.close();
+
+		for(int i = 0; i < intAL.size(); i++) {
+			for(int k: intAL.get(i))
+				System.out.print(k + " ");
+			System.out.println();
+		}
+		
+		/*
 		for(int i = 0; i < 10; i++)		//top and bottom rows
 			Collections.addAll(blacks, new Point(i,0), new Point(i,9));
 		for(int i = 1; i < 9; i++)		//sides
@@ -61,7 +98,7 @@ public class Game extends JFrame {
 			System.out.print(pt.x + " " + pt.y + " ");
 		}
 		System.out.println();
-		
+		*/
 		int[] a0 = {1,3, 2,3, 1,4, 2,4};
 		int[] a1 = {1,5, 1,6, 2,6};
 		int[] a2 = {2,5, 3,5, 3,6};
