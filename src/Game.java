@@ -1,20 +1,18 @@
 import java.awt.Color;
 import java.awt.Point;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.swing.JFrame;
-
 class State {
 	State prev;
 	byte[] state;
-	
 	State(State _prev) {
 		prev = _prev;
 		state = new byte[22];
 	}
-	
 	static String stateToString(byte[] b) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(Byte.toString(b[0]));
@@ -39,7 +37,6 @@ class Piece {
 	Color color;
 	int id;
 	Vector<Point> pts = new Vector<Point>();
-	
 	Piece(int id, int r, int g, int b, Vector<Point> pts) {
 		this.id = id;
 		this.color = new Color(r, g, b);
@@ -47,43 +44,58 @@ class Piece {
 	}
 }
 
-public class Game extends JFrame {
-	TreeSet<State> state = new TreeSet<State>(new StateComparator());
+class Board {
+	Point size, destOffset;
+	int numPieces;
+	boolean[][] origLayout;
+	Vector<Point> blacks = new Vector<Point>();
 	Vector<Piece> pieces = new Vector<Piece>();
-	Vector<Point> blackPts = new Vector<Point>();
-	View view;
-	boolean[][] boardMaster = new boolean[10][10];
 	
-	int[] boardSize = new int[2];
+	public Board() {}
+	Board(Board board){
+		this.size = board.size;
+		this.destOffset = board.destOffset;
+		this.blacks = board.blacks;
+		this.origLayout = new boolean[board.size.x][board.size.y];
+		for (int i = 0; i < board.size.x; i++)
+		     this.origLayout[i] = Arrays.copyOf(board.origLayout[i], board.origLayout[i].length);
+	}
+	
+	void print() {
+		for(int i = 0; i < size.x; i++) {
+			for(int k = 0; k < size.y; k++)
+				System.out.print(((origLayout[k][i]) ? 1 : 0) + " ");
+			System.out.println();
+		}
+		System.out.println("\n");
+	}
+}
+
+public class Game {
+	TreeSet<State> state = new TreeSet<State>(new StateComparator());
+	GameWin win;
+	Board boardInit;
 	int numPieces, boardNum = 2;
+	Point dest, boardSize;
 	Help help = new Help(this);
 
-	public Game() throws Exception {
-		boardMaster = help.scanInitLayout(boardNum, pieces, blackPts);
+	public Game() throws IOException {
+		boardInit = help.loadBoard(boardNum);
 		isBoardValid();
-		view = new View(this);
-		this.setTitle("Puzzle");
-		this.setSize(482, 505);
-		this.getContentPane().add(view);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.setVisible(true);
+		win = new GameWin(this);
 	}
-	public static void main(String[] args) throws Exception { 
-		new Game();
-	}
+	public static void main(String[] args) throws Exception { new Game(); }
 	
 	boolean isBoardValid() {
-		boolean[][] board = help.deepCopyBoard(boardMaster);
-		
-		for(Piece p : pieces)
+		Board board = new Board(boardInit);
+		for(Piece p : boardInit.pieces)
 			for(Point pt: p.pts) {
-				if(board[pt.x][pt.y]) {
+				if(board.origLayout[pt.x][pt.y]) {
 					System.out.println("CONFLICT:  (" + pt.x + "," + pt.y + ")");
 					return false;
 				}
-				board[pt.x][pt.y] = true;
+				board.origLayout[pt.x][pt.y] = true;
 			}
-	
 		return true;
 	}
 }

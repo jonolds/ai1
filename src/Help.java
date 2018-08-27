@@ -1,6 +1,7 @@
 import java.awt.Point;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -12,7 +13,7 @@ public class Help {
 		this.game = game;
 	}
 	
-	Vector<Point> cvt_ArrInt2VecPoint(int[] arrayInt) {
+	Vector<Point> arr2PtVec(int[] arrayInt) {
 		Vector<Point> pntVec = new Vector<Point>();
 		for(int i = 0; i < arrayInt.length; i+=2)
 			pntVec.add(new Point(arrayInt[i], arrayInt[i+1]));
@@ -27,75 +28,49 @@ public class Help {
 		}
 		return intArray;
 	}
-	
+
 	ArrayList<int[]> scanIntsFromFile(int boardNum) throws FileNotFoundException {
 		Scanner sc = new Scanner(new File("initialValues.txt"));
+		String line;
+		ArrayList<int[]> intList = new ArrayList<>();
 		while(!(sc.nextLine().contains("***" + Integer.toString(boardNum)))) {}
-
-		game.boardSize[0] = sc.nextInt(); 
-		game.boardSize[1] = sc.nextInt();
-		game.numPieces = sc.nextInt();
-		sc.nextLine();				//NEEDED after getting ints
-		
-		ArrayList<int[]> intAL = new ArrayList<int[]>();
-		
-		for(int k = 0; k < game.numPieces+1; k++) {
-			String[] s = sc.nextLine().trim().split(" ");
+		while(!((line = sc.nextLine()).contains("---"))) {
+			String[] s = line.trim().split(" ");
 			int[] intArray = new int[s.length];
 			for(int i = 0; i < s.length; i++)
 				intArray[i] = Integer.parseInt(s[i]);
-			intAL.add(intArray);
+			intList.add(intArray);
 		}
 		sc.close();
-		return intAL;
+		return intList;
 	}
 	
-	boolean[][] scanInitLayout(int boardNum, Vector<Piece> pieces, Vector<Point> blackPts) throws FileNotFoundException {
-		ArrayList<int[]> intAL = scanIntsFromFile(boardNum);
-		//Get Pieces
-		for(int i = 0; i < game.numPieces; i++) {
-			int[] pts = Arrays.copyOfRange(intAL.get(i), 3, intAL.get(i).length);
-			pieces.addElement(new Piece(i, intAL.get(i)[0], intAL.get(i)[1], intAL.get(i)[2], cvt_ArrInt2VecPoint(pts)));
-		}
-		//Get Black Points
-		for(int i = 0; i < intAL.get(game.numPieces).length; i+=2)
-			blackPts.add(new Point(intAL.get(game.numPieces)[i], intAL.get(game.numPieces)[i+1]));
+	Board loadBoard(int boardNum) throws IOException {
+		Board board = new Board();
+		ArrayList<int[]> intList = scanIntsFromFile(boardNum);
+		board.size = new Point(intList.get(0)[0], intList.get(0)[1]);
+		board.destOffset = new Point(intList.get(1)[0], intList.get(1)[1]);
+		board.numPieces = intList.get(2)[0];
 		
-		//Create Master Original Board
-		boolean[][] boardMaster = new boolean[game.boardSize[0]][game.boardSize[1]];
-		for(Point pt: blackPts) {
-			if(boardMaster[pt.x][pt.y]) {
+		//Get Pieces
+		for(int i = 0; i < board.numPieces; i++) {
+			int[] pts = Arrays.copyOfRange(intList.get(i+3), 3, intList.get(i+3).length);
+			board.pieces.add(new Piece(i, intList.get(i+3)[0], intList.get(i+3)[1], intList.get(i+3)[2], arr2PtVec(pts)));
+		}
+		
+		//Get Black Spaces
+		for(int i = 0; i < intList.get(board.numPieces + 3).length; i+=2)
+			board.blacks.add(new Point(intList.get(board.numPieces+3)[i], intList.get(board.numPieces+3)[i+1]));
+		
+		//Create origLayout
+		board.origLayout = new boolean[board.size.x][board.size.y];
+		for(Point pt: board.blacks) {
+			if(board.origLayout[pt.x][pt.y]) {
 				System.out.println("CONFLICT CREATING BOARD MASTER: black point:  (" + pt.x + "," + pt.y + ")");
 				System.exit(1);
 			}
-			boardMaster[pt.x][pt.y] = true;
+			board.origLayout[pt.x][pt.y] = true;
 		}
-		
-//		for(Piece p: pieces) {
-//			for(Point pt: p.pts) {
-//				if(boardMaster[pt.x][pt.y]) {
-//					System.out.println("CONFLICT INITIALIZING MASTER. piece id: " + p.id +  "  Point: (" + pt.x + "," + pt.y + ")");
-//					System.exit(1);
-//				}
-//				boardMaster[pt.x][pt.y] = true;
-//			}
-//		}
-		return boardMaster;
-	}
-	
-	void printBoolBoard(boolean[][] board) {
-		for(int i = 0; i < game.boardSize[0]; i++) {
-			for(int k = 0; k < game.boardSize[1]; k++)
-				System.out.print(((board[k][i]) ? 1 : 0) + " ");
-			System.out.println();
-		}
-		System.out.println("\n");
-	}
-	
-	boolean[][] deepCopyBoard(boolean[][] board) {
-		boolean[][]  boardNew = new boolean[board.length][board[0].length];
-		for (int i = 0; i < game.boardSize[0]; i++)
-		     boardNew[i] = Arrays.copyOf(board[i], board[i].length);
-		return boardNew;
+		return board;
 	}
 }
