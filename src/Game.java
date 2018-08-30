@@ -1,32 +1,14 @@
 import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.Vector;
 
-class State {
-	State prev;
-	byte[] state;
-	State(State _prev) {
-		prev = _prev;
-		state = new byte[22];
-	}
-	static String stateToString(byte[] b) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(Byte.toString(b[0]));
-		for(int i = 1; i < b.length; i++) {
-			sb.append(",");
-			sb.append(Byte.toString(b[i]));
-		}
-		return sb.toString();
-	}
-}
 
 class StateComparator implements Comparator<State> {
 	public int compare(State a, State b) {
-		for(int i = 0; i < 22; i++) 
+		for(var i = 0; i < 22; i++) 
 			if(a.state[i] < b.state[i]) return -1;
 			else if(a.state[i] > b.state[i]) return 1;
 		return 0;
@@ -44,58 +26,96 @@ class Piece {
 	}
 }
 
-class Board {
-	Point size, destOffset;
-	int numPieces;
-	boolean[][] origLayout;
-	Vector<Point> blacks = new Vector<Point>();
-	Vector<Piece> pieces = new Vector<Piece>();
-	
-	public Board() {}
-	Board(Board board){
-		this.size = board.size;
-		this.destOffset = board.destOffset;
-		this.blacks = board.blacks;
-		this.origLayout = new boolean[board.size.x][board.size.y];
-		for (int i = 0; i < board.size.x; i++)
-		     this.origLayout[i] = Arrays.copyOf(board.origLayout[i], board.origLayout[i].length);
+class State {
+	State prev;
+	byte[] state;
+	State(State _prev) {
+		prev = _prev;
+		state = new byte[22];
 	}
 	
-	void print() {
-		for(int i = 0; i < size.x; i++) {
-			for(int k = 0; k < size.y; k++)
-				System.out.print(((origLayout[k][i]) ? 1 : 0) + " ");
-			System.out.println();
+	static String stateToString(byte[] b) {
+		var sb = new StringBuilder();
+		sb.append(Byte.toString(b[0]));
+		for(var i = 1; i < b.length; i++) {
+			sb.append(",");
+			sb.append(Byte.toString(b[i]));
 		}
-		System.out.println("\n");
+		return sb.toString();
 	}
 }
 
-public class Game {
+class Board {
+	Point size, destOffset;
+	int numPieces;
+	boolean[][] frame;
+	Vector<Point> blacks = new Vector<Point>();
+	Vector<Piece> pieces = new Vector<Piece>();
+
+	public boolean[][] getFrame() { 
+		var tmp = new boolean[frame.length][frame[0].length];
+		for (var i = 0; i < size.x; i++)
+		    tmp[i] = frame[i].clone();
+		return tmp;
+	}
+}
+
+public class Game extends GameHelp {
+
+	boolean isBoardValid() {
+		var frame = boardInit.getFrame();
+		var frame2 = copy2d(frame);
+		
+		print(frame);
+		print(frame2);
+		frame[0][0] = false;
+		print(frame);
+		print(frame2);
+
+		for(Piece p : boardInit.pieces)
+			for(Point pt: p.pts) {
+				if(frame[pt.x][pt.y]) {
+					System.out.println("INVALID:  (" + pt.x + "," + pt.y + ")");
+					return false;
+				}
+				frame[pt.x][pt.y] = true;
+			}
+		//display(boardInit.blacks);
+		
+		return true;
+	}
+	
+	//==============MAIN BEGIN===============
 	TreeSet<State> state = new TreeSet<State>(new StateComparator());
 	GameWin win;
 	Board boardInit;
 	int numPieces, boardNum = 2;
-	Point dest, boardSize;
-	Help help = new Help(this);
-
+	Point destPos, boardSize;
+	
 	public Game() throws IOException {
-		boardInit = help.loadBoard(boardNum);
+		boardInit = loadBoard(boardNum);
 		isBoardValid();
-		win = new GameWin(this);
+		run();
+	//	win = new GameWin(this);
 	}
 	public static void main(String[] args) throws Exception { new Game(); }
 	
-	boolean isBoardValid() {
-		Board board = new Board(boardInit);
-		for(Piece p : boardInit.pieces)
-			for(Point pt: p.pts) {
-				if(board.origLayout[pt.x][pt.y]) {
-					System.out.println("CONFLICT:  (" + pt.x + "," + pt.y + ")");
-					return false;
-				}
-				board.origLayout[pt.x][pt.y] = true;
-			}
-		return true;
+	public void run() {
+		//var state = new State(null);
+//		for(var s: state.state)
+//			System.out.print(s + " ");
+	}
+	//==============MAIN END=================
+	
+	void display(Vector<Point> pos) {
+		char[][] display = new char[boardSize.x][boardSize.y];
+		boolean[][] frame = boardInit.getFrame();
+		for (var i = 0; i < boardSize.x; i++)
+			for(var k = 0; k < boardSize.y; k++)
+				display[i][k] = (frame[i][k]) ? 'x' : ' ';
+	}
+	
+	boolean isSolved(Point curPos) {
+		return curPos.equals(destPos);
 	}
 }
