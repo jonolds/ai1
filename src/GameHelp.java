@@ -11,7 +11,7 @@ public class GameHelp {
 	
 	Vector<Point> blacks = new Vector<>();
 	Vector<Piece> pieces = new Vector<>();
-	int[] size, destOffset = new int[2];
+	byte[] size, destOffset = new byte[2];
 	boolean[][] frameOrig;
 
 	Vector<Point> arr2PtVec(int[] arrayInt) {
@@ -47,8 +47,8 @@ public class GameHelp {
 	
 	void loadBoard(int boardNum, Game game) throws IOException {
 		var intList = scanIntsFromFile(boardNum);
-		size = new int[] {intList.get(0)[0], intList.get(0)[1]};
-		int[] dest = new int[] {intList.get(1)[0], intList.get(1)[1]};
+		size = new byte[] {(byte)intList.get(0)[0], (byte)intList.get(0)[1]};
+		byte[] dest = new byte[] {(byte)intList.get(1)[0], (byte)intList.get(1)[1]};
 		int numPieces = intList.get(2)[0];
 		
 		//Get Pieces
@@ -58,8 +58,8 @@ public class GameHelp {
 		}
 		
 		//Calculate and set destOffset from piece0(pts0)
-		destOffset[0] = dest[0] - pieces.get(0).pts.get(0).x;
-		destOffset[1] = dest[1] - pieces.get(0).pts.get(0).y;
+		destOffset[0] = (byte) (dest[0] - pieces.get(0).pts.get(0).x);
+		destOffset[1] = (byte) (dest[1] - pieces.get(0).pts.get(0).y);
 		
 		//Get Black Spaces
 		for(var i = 0; i < intList.get(numPieces + 3).length; i+=2)
@@ -94,8 +94,8 @@ public class GameHelp {
 	}
 	void print(State st) {
 		var s = new StringBuilder();
-		for(int i = 0; i < st.value.length; i+=2)
-			s.append("(" + st.value[i] + "," + st.value[i+1] + ") ");
+		for(int i = 0; i < st.val.length; i+=2)
+			s.append("(" + st.val[i] + "," + st.val[i+1] + ") ");
 		println(s);
 	}
 	public <T>void print(T obj) {
