@@ -19,7 +19,6 @@ class GameWin extends JFrame {
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
 	}
-	
 }
 
 class View extends JPanel {
@@ -38,9 +37,9 @@ class View extends JPanel {
 	public void paintComponent(Graphics gfx) {
 		graphics = gfx;
 		graphics.setColor(new Color(0, 0, 0));
-		for(Point pt : game.boardInit.blacks)
+		for(Point pt : game.blacks)
 			drawBlock(pt.x, pt.y);
-		for(Piece p : game.boardInit.pieces) {
+		for(Piece p : game.pieces) {
 			graphics.setColor(p.color);
 			for(Point pt: p.pts)
 				drawBlock(state[p.id] + pt.x, state[p.id+1] + pt.y);
