@@ -9,11 +9,55 @@ import java.util.Vector;
 
 public class GameHelp {
 	
-	Vector<Point> blacks = new Vector<>();
-	Vector<Piece> pieces = new Vector<>();
-	byte[] size, destOffset = new byte[2];
+	int[] blacksTmp;
+	Piece[] piecesTmp;
+	int[] sizeTmp, destOffsetTmp;
+	boolean[][] frameOrigTmp;
+	
+	int[] blacks;
+	Piece[] pieces;
+	final int[] size;
+	final int[] destOffset;
 	boolean[][] frameOrig;
+	
+	int blacks(int i) {
+		return blacks[i];
+	}
+	int[] getBlacks() {
+		return blacks.clone();
+	}
+	
+	int size(int i) {
+		return size[i];
+	}
+	int destOff(int i) {
+		return destOffset[i];
+	}
+	boolean[][] frame() {
+		boolean[][] f = new boolean[frameOrig.length][frameOrig[0].length];
+		for(int i = 0; i < frameOrig.length; i++)
+			f = frameOrig.clone();
+		return f;
+	}
+	Piece piece(int i) {
+		return new Piece(pieces[i]);
+	}
+	Piece[] getPieces() {
+		Piece[] p = new Piece[pieces.length];
+		p = Arrays.copyOf(pieces, pieces.length);
+		return p;
+	}
 
+	GameHelp() throws IOException {
+		loadBoard(1);
+		this.pieces = this.piecesTmp.clone();
+		this.size = this.sizeTmp.clone();
+		this.destOffset = this.destOffsetTmp.clone();
+		this.frameOrig = this.frameOrigTmp;
+		this.blacks = this.blacksTmp.clone();
+
+	}
+	
 	Vector<Point> arr2PtVec(int[] arrayInt) {
 		var pntVec = new Vector<Point>();
 		for(var i = 0; i < arrayInt.length; i+=2)
@@ -45,36 +89,57 @@ public class GameHelp {
 		return intList;
 	}
 	
-	void loadBoard(int boardNum, Game game) throws IOException {
+	void loadBoard(int boardNum) throws IOException {
 		var intList = scanIntsFromFile(boardNum);
-		size = new byte[] {(byte)intList.get(0)[0], (byte)intList.get(0)[1]};
-		byte[] dest = new byte[] {(byte)intList.get(1)[0], (byte)intList.get(1)[1]};
+		sizeTmp = new int[] {intList.get(0)[0], intList.get(0)[1]};
+		int[] dest = new int[] {intList.get(1)[0], intList.get(1)[1]};
 		int numPieces = intList.get(2)[0];
 		
 		//Get Pieces
+		
+		piecesTmp = new Piece[numPieces];
 		for(var i = 0; i < numPieces; i++) {
-			var pts = Arrays.copyOfRange(intList.get(i+3), 3, intList.get(i+3).length);
-			pieces.add(new Piece(i, intList.get(i+3)[0], intList.get(i+3)[1], intList.get(i+3)[2], arr2PtVec(pts)));
+			int[] pieceLine = intList.get(i+3);
+			int[] piecePts = new int[pieceLine.length - 3];
+			System.arraycopy(pieceLine, 3, piecePts, 0, pieceLine.length - 3);
+			piecesTmp[i] = new Piece(i, pieceLine[0], pieceLine[1], pieceLine[2], piecePts);
 		}
 		
 		//Calculate and set destOffset from piece0(pts0)
-		destOffset[0] = (byte) (dest[0] - pieces.get(0).pts.get(0).x);
-		destOffset[1] = (byte) (dest[1] - pieces.get(0).pts.get(0).y);
+		destOffsetTmp = new int[] {dest[0] - piecesTmp[0].pts[0], dest[1] - piecesTmp[0].pts[1]};
+		destOffsetTmp[0] = dest[0] - piecesTmp[0].pts[0];
+		destOffsetTmp[1] = dest[1] - piecesTmp[0].pts[1];
 		
 		//Get Black Spaces
-		for(var i = 0; i < intList.get(numPieces + 3).length; i+=2)
-			blacks.add(new Point(intList.get(numPieces+3)[i], intList.get(numPieces+3)[i+1]));
+		blacksTmp = intList.get(numPieces + 3);
+//		for(var i = 0; i < intList.get(numPieces + 3).length; i+=2) {
+//			int[] blackLine = intList.get(numPieces+3);
+//			blacksTmp = new int[] {intList.get(numPieces + 3)[i], intList.get(numPieces+3)[i+1]};
+//		}
 		
 		//Create origLayout
-		frameOrig = new boolean[size[0]][size[1]];
-		for(var pt: blacks)
-			frameOrig[pt.x][pt.y] = true;
+		frameOrigTmp = new boolean[sizeTmp[0]][sizeTmp[1]];
+		for(int i = 0; i < blacksTmp.length; i+=2)
+			frameOrigTmp[blacksTmp[i]][blacksTmp[i+1]] = true;
 	}
 	
 	public boolean[][] copy2d(boolean[][] orig) {
 		var copy = new boolean[orig.length][orig[0].length];
 		for (var i = 0; i < orig.length; i++)
 		    copy[i] = orig[i].clone();
+		return copy;
+	}
+	
+	public int[] copy(int[] orig) {
+		var copy = new int[orig.length];
+		for (var i = 0; i < orig.length; i++)
+			copy[i] = orig[i];
+		return copy;
+	}
+	public byte[] copy(byte[] orig) {
+		var copy = new byte[orig.length];
+		for (var i = 0; i < orig.length; i++)
+			copy[i] = orig[i];
 		return copy;
 	}
 	
@@ -105,10 +170,17 @@ public class GameHelp {
 		System.out.println(obj);
 	}
 	public void println(byte[] bArray) {
-		if(bArray.length > 0) {
-			for(int i = 0; i < bArray.length; i++)
-				System.out.print(bArray[i] + " ");
-		}
-		System.out.print("\n");
+		var s = new StringBuilder();
+		for(int i = 0; i < bArray.length; i+=2)
+			s.append("(" + bArray[i] + "," + bArray[i+1] + ") ");
+		println(s);
+	}
+	public void print(int[] integ) {
+		for(int i : integ)
+			print(i + " ");
+		println(" ");
+	}
+	public void print(byte[] b) {
+		println(b);
 	}
 }
